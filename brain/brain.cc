@@ -21,6 +21,7 @@ callback(Robot* robot)
     
     // TODO: fix file system, not working at all
     // TODO: fix going through passages that are facing the wrong way, never an incentive for us unless on 12th file
+    // TODO: might be better to not go straight through doors, but try to find the next wall (this could be our file tracking)
     
     cout << "Range: " << robot->range << endl;
     cout << "Heading: " << robot->pos_t << endl;

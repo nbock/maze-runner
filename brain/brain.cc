@@ -21,8 +21,8 @@ void
 callback(Robot* robot)
 {
     
-    // Celebrate: backwall and file tracker are WORKIGN
-    // TODO: I shouldn't turn or increment file when on a backwall - this is causing loops
+    // Celebrate: backwall and file tracker are WORKING
+    // TODO: filing and not turning "back" works, pending a full test (tested from corner in the middle of the maze
     // TODO: goal file has no logic, gonna leave that for last as that should be relatively simple.
 
     cout << "Range: " << robot->range << endl;
@@ -30,12 +30,6 @@ callback(Robot* robot)
     cout << "File: " << file << endl;
     cout << "Wallfound: " << wallFound << endl;
     cout << "Backwall: " << backWall << endl;
-
-    //if (robot->pos_t < 0.02 && robot->range > 998 && !wallFound) {
-      //  robot->set_vel(5.0, 5.0);
-        //return;
-    //}
-   
 
     if (robot->range < 998) {
         wallFound = true;
@@ -45,8 +39,6 @@ callback(Robot* robot)
     // if facing backwards, orient another direction
     if (wallFound && (robot->pos_t < -1.7 || robot->pos_t > 1.7)) {
         backWall = true;
-    } else if (wallFound) {
-        backWall = false;
     }
 
     if (robot->range < 1.0) {
@@ -61,6 +53,11 @@ callback(Robot* robot)
         } else {
             robot->set_vel(-5.0, 5.0);
         }
+
+        if (!(robot->pos_t < -1.7 || robot->pos_t > 1.7)) {
+            backWall = false;
+        }
+
         wallFound = true;
         transition = false;
         return;
@@ -68,7 +65,7 @@ callback(Robot* robot)
 
     if (robot->range < 1.7 && !wallFound) {
         // now we know we can turn through a door
-        
+
         if (robot->pos_t > 0) {
             robot->set_vel(5.0, -2.0);
         } else if (robot->pos_t < 0) {
@@ -85,20 +82,22 @@ callback(Robot* robot)
     if (robot->range > 998 && !transition) {
 
         wallFound = false;
-        // keep track when we're along a wall (could be left or right)
+        if (!backWall) {
+            // keep track when we're along a wall (could be left or right)
        
-        if (robot->pos_t > 0) { 
-            robot->set_vel(5.0, 0.0);
-        } else if (robot->pos_t <= 0) {
-            robot->set_vel(0.0, 5.0);
-        }
-        if (!transition && !backWall) {
-            cout << "Moving to new file" << endl;
-            file += 1;
-            transition = true;
+            if (robot->pos_t > 0) { 
+                robot->set_vel(5.0, 0.0);
+            } else if (robot->pos_t <= 0) {
+                robot->set_vel(0.0, 5.0);
+            }
+            if (!transition) {
+                cout << "Moving to new file" << endl;
+                file += 1;
+                transition = true;
             
+            }
+            return;
         }
-        return;
     }
 
  

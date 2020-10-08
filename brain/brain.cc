@@ -13,6 +13,7 @@ bool wallFound = false;
 bool facingDoor = false;
 bool transition = false;
 bool backWall = false;
+bool turningRight = false;
 
 // we know the goal state is always on the 11th file
 int goalFile = 10;
@@ -20,9 +21,8 @@ int goalFile = 10;
 void
 callback(Robot* robot)
 {
-    
-    // Celebrate: backwall and file tracker are WORKING
-    // TODO: filing and not turning "back" works, pending a full test (tested from corner in the middle of the maze
+    // TODO: there is some bug in filing that tracks one more than necessary file in demo.sh 
+    //
     // TODO: goal file has no logic, gonna leave that for last as that should be relatively simple.
 
     cout << "Range: " << robot->range << endl;
@@ -30,6 +30,10 @@ callback(Robot* robot)
     cout << "File: " << file << endl;
     cout << "Wallfound: " << wallFound << endl;
     cout << "Backwall: " << backWall << endl;
+    cout << "Turningright: " << turningRight << endl;
+
+    bool backFacing = (robot->pos_t < -1.7 || robot->pos_t > 1.7);
+    cout << "Backfacing: " << backFacing << endl;
 
     if (robot->range < 998) {
         wallFound = true;
@@ -37,60 +41,89 @@ callback(Robot* robot)
 
     
     // if facing backwards, orient another direction
-    if (wallFound && (robot->pos_t < -1.7 || robot->pos_t > 1.7)) {
+    if (wallFound && backFacing) {
         backWall = true;
     }
 
-    if (robot->range < 1.0) {
-        int heading = robot->pos_t;
+    if (robot->range < 1.2) {
+        float heading = robot->pos_t;
 
-        if (heading > 0 && heading < 0.75) {
+        if (heading > 0 && heading < 1.5) {
             // facing left
-            robot->set_vel(-5.0, 5.0);
-        } else if (heading < 0 && heading > -0.75) {
+            backWall = false;
+        } else if (heading < 0 && heading > -1.5) {
             // facing right
-            robot->set_vel(5.0, -5.0);
-        } else {
-            robot->set_vel(-5.0, 5.0);
-        }
-
-        if (!(robot->pos_t < -1.7 || robot->pos_t > 1.7)) {
             backWall = false;
         }
 
+        robot->set_vel(-5.0, 5.0);
+
         wallFound = true;
         transition = false;
+
         return;
  	}
 
-    if (robot->range < 1.7 && !wallFound) {
+    if (robot->range < 1.7) {
         // now we know we can turn through a door
+        
+        transition = false;
+        wallFound = true;
 
-        if (robot->pos_t > 0) {
-            robot->set_vel(5.0, -2.0);
-        } else if (robot->pos_t < 0) {
-            robot->set_vel(-2.0, 5.0);
+        float heading = robot->pos_t;
+        
+        if (heading > 0 && heading < 0.75) {
+            // facing left
+            backWall = false;
+        } else if (heading < 0 && heading > -0.75) {
+            // facing right
+            backWall = false;
         }
 
-        transition = false;
+        robot->set_vel(5.0, 5.0);
 
         return;
     }
 
  
     // range is 999 when we have no sonar hits, but it seems to be rounded in output
-    if (robot->range > 998 && !transition) {
+    if (robot->range > 998) {
 
         wallFound = false;
         if (!backWall) {
             // keep track when we're along a wall (could be left or right)
-       
-            if (robot->pos_t > 0) { 
-                robot->set_vel(5.0, 0.0);
-            } else if (robot->pos_t <= 0) {
-                robot->set_vel(0.0, 5.0);
-            }
+        
+            // decide which way to turn
+            // send commands based on that
+            // turningRight == false --> turning left
+            // turningRight == true --> turning right
+
+            if (turningRight) {
+                if (robot->pos_t > -0.75 && robot->pos_t < 0.75) { 
+                    robot->set_vel(5.0, -2.0);
+                } else { 
+                    robot->set_vel(5.0, 0.5);
+                }
+            } 
+            
+            if (!turningRight) {
+                // turning left
+                if (robot->pos_t < -0.75 && robot->pos_t > 0.75) {
+                    robot->set_vel(-2.0, 5.0);
+                } else {
+                    robot->set_vel(0.5, 5.0);
+                }
+            } 
+            
+           
             if (!transition) {
+
+                if (robot->pos_t > 0) {
+                    turningRight = true;
+                } else {
+                    turningRight = false;
+                }
+
                 cout << "Moving to new file" << endl;
                 file += 1;
                 transition = true;

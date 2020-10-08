@@ -9,11 +9,13 @@ using std::endl;
 
 // we start on the 0th file
 int file = 0;
+int lastFile = 0;
 bool wallFound = false;
 bool facingDoor = false;
 bool transition = false;
 bool backWall = false;
 bool turningRight = false;
+
 
 // we know the goal state is always on the 11th file
 int goalFile = 10;
@@ -21,18 +23,14 @@ int goalFile = 10;
 void
 callback(Robot* robot)
 {
-    // TODO: there is some bug in filing that tracks one more than necessary file in demo.sh 
-    //
-    // TODO: goal file has no logic, gonna leave that for last as that should be relatively simple.
-
+    bool backFacing = (robot->pos_t < -1.6 || robot->pos_t > 1.6);
     cout << "Range: " << robot->range << endl;
     cout << "Heading: " << robot->pos_t << endl;
     cout << "File: " << file << endl;
+    cout << "Lastfile:" << lastFile << endl;
     cout << "Wallfound: " << wallFound << endl;
     cout << "Backwall: " << backWall << endl;
     cout << "Turningright: " << turningRight << endl;
-
-    bool backFacing = (robot->pos_t < -1.7 || robot->pos_t > 1.7);
     cout << "Backfacing: " << backFacing << endl;
 
     if (robot->range < 998) {
@@ -45,7 +43,7 @@ callback(Robot* robot)
         backWall = true;
     }
 
-    if (robot->range < 1.2) {
+    if (robot->range < 1.2 || (file == 10 && robot->range < 1.5)) {
         float heading = robot->pos_t;
 
         if (heading > 0 && heading < 1.5) {
@@ -90,7 +88,7 @@ callback(Robot* robot)
     if (robot->range > 998) {
 
         wallFound = false;
-        if (!backWall) {
+        if (!backWall || file == 11 || (lastFile == 11 && file == 10)) {
             // keep track when we're along a wall (could be left or right)
         
             // decide which way to turn
@@ -117,15 +115,28 @@ callback(Robot* robot)
             
            
             if (!transition) {
-
+                // on the 11th file, I want to be able to turn "backwards"
                 if (robot->pos_t > 0) {
                     turningRight = true;
+                    
+                    if (file == 11 || lastFile == 11) {
+                        turningRight = false;
+                    }
                 } else {
                     turningRight = false;
+
+                    if (file == 11 || lastFile == 11) {
+                        turningRight = true;
+                    }
                 }
 
                 cout << "Moving to new file" << endl;
-                file += 1;
+                lastFile = file; 
+                if (file == 11) { 
+                    file -= 1;
+                } else {
+                    file += 1;
+                }
                 transition = true;
             
             }

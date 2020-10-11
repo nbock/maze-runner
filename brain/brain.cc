@@ -132,17 +132,15 @@ callback(Robot* robot)
     // range is 999 when we have no sonar hits, but it seems to be rounded in output
     if (robot->range > 998) {
 
+        if (fabs(robot->heading < 0.3)) {
+            robot->set_vel(5.0, 3.0);
+        }
+            
         wallFound = false;
         if (!backWall || file == 11 || (lastFile == 11 && file == 10) || fullyExplored) {
             // turningRight == false --> turning left
             // turningRight == true --> turning right
             
-            if (fabs(lastHeading) < 0.3) {
-                robot->set_vel(5.0, 3.0);
-                return;
-            }
-        
-
             if (turningRight) {
                 if (facingForward || (file == 11 && facingBackward)) { 
                     robot->set_vel(5.0, -2.0);
